@@ -22,10 +22,28 @@ contract RentalContract {
     mapping(address => Tenant) public tenants;
     mapping(address => RentalPlace) public rentalPlaces;
 
-    event TenantAdded(address indexed tenantWallet, string fullName, string tenantAddress);
+    event TenantAdded(
+        address indexed tenantWallet,
+        string fullName,
+        string tenantAddress
+    );
     event RentalPlaceAdded(address indexed rentalPlaceOwner, string location);
-    event RentStarted(address indexed tenantWallet, address indexed rentalPlaceOwner, uint256 rentStartDate);
-    event RentEnded(address indexed tenantWallet, address indexed rentalPlaceOwner, uint256 rentEndDate, bool hasIssue);
+    event RentStarted(
+        address indexed tenantWallet,
+        address indexed rentalPlaceOwner,
+        uint256 rentStartDate
+    );
+    event RentEnded(
+        address indexed tenantWallet,
+        address indexed rentalPlaceOwner,
+        uint256 rentEndDate,
+        bool hasIssue
+    );
+    event IssueReported(
+        address indexed tenantWallet,
+        address indexed rentalPlaceOwner,
+        string issueDescription
+    );
 
     constructor() {
         owner = msg.sender;
@@ -36,13 +54,32 @@ contract RentalContract {
         _;
     }
 
-    function addTenant(string memory fullName, string memory tenantAddress, address tenantWallet) public {
-        tenants[tenantWallet] = Tenant(fullName, tenantAddress, tenantWallet, false);
+    function addTenant(
+        string memory fullName,
+        string memory tenantAddress,
+        address tenantWallet
+    ) public {
+        tenants[tenantWallet] = Tenant(
+            fullName,
+            tenantAddress,
+            tenantWallet,
+            false
+        );
         emit TenantAdded(tenantWallet, fullName, tenantAddress);
     }
 
-    function addRentalPlace(string memory location, uint256 rentStartDate, uint256 rentEndDate) public onlyOwner {
-        rentalPlaces[msg.sender] = RentalPlace(location, rentStartDate, rentEndDate, msg.sender, false);
+    function addRentalPlace(
+        string memory location,
+        uint256 rentStartDate,
+        uint256 rentEndDate
+    ) public onlyOwner {
+        rentalPlaces[msg.sender] = RentalPlace(
+            location,
+            rentStartDate,
+            rentEndDate,
+            msg.sender,
+            false
+        );
         emit RentalPlaceAdded(msg.sender, location);
     }
 
@@ -53,7 +90,11 @@ contract RentalContract {
         require(!rentalPlace.isRented, "The rental place is already rented.");
 
         rentalPlace.isRented = true;
-        emit RentStarted(tenantWallet, rentalPlace.owner, rentalPlace.rentStartDate);
+        emit RentStarted(
+            tenantWallet,
+            rentalPlace.owner,
+            rentalPlace.rentStartDate
+        );
     }
 
     function endRent(address tenantWallet, bool hasIssue) public onlyOwner {
@@ -61,9 +102,20 @@ contract RentalContract {
         Tenant storage tenant = tenants[tenantWallet];
 
         require(rentalPlace.isRented, "The rental place is not rented.");
-
+        if (hasIssue) {
+            emit IssueReported(
+                tenantWallet,
+                rentalPlace.owner,
+                "There is an issue with the rental place."
+            );
+        }
         rentalPlace.isRented = false;
         tenant.hasIssue = hasIssue;
-        emit RentEnded(tenantWallet, rentalPlace.owner, rentalPlace.rentEndDate, hasIssue);
+        emit RentEnded(
+            tenantWallet,
+            rentalPlace.owner,
+            rentalPlace.rentEndDate,
+            hasIssue
+        );
     }
 }
